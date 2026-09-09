@@ -1,8 +1,7 @@
-pynput
-uiautomation
-pygame
-piper-tts
-pyperclip
-pyinstaller
-pystray
-Pillow
+pynput>=1.7.7
+uiautomation>=2.0.20
+pygame>=2.6.0
+piper-tts>=1.3.0
+pystray>=0.19.5
+Pillow>=10.0.0
+pyinstaller>=6.0.0
