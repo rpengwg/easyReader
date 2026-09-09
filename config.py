@@ -1,26 +1,41 @@
+import os
 import sys
-import tempfile
-from pathlib import Path
 
-APP_NAME = "EasyReader"
-APP_VERSION = "1.0.0"
-MODEL_NAME = "zh_CN-huayan-medium"
 
-# Source mode and PyInstaller one-folder mode use different resource roots.
-if getattr(sys, "frozen", False):
-    RESOURCE_DIR = Path(getattr(sys, "_MEIPASS", Path(sys.executable).resolve().parent))
-else:
-    RESOURCE_DIR = Path(__file__).resolve().parent
+def resource_path(relative):
 
-MODEL_DIR = RESOURCE_DIR / "models"
-TEMP_DIR = Path(tempfile.gettempdir()) / "EasyReader"
-TEMP_DIR.mkdir(parents=True, exist_ok=True)
+    if hasattr(sys, "_MEIPASS"):
 
-PIPER_MODEL = MODEL_DIR / f"{MODEL_NAME}.onnx"
-PIPER_CONFIG = MODEL_DIR / f"{MODEL_NAME}.onnx.json"
+        base = sys._MEIPASS
 
-SELECTION_DELAY = 0.25
-COPY_WAIT = 0.12
-MIN_TEXT_LENGTH = 2
-MAX_CHUNK_LENGTH = 350
-MAX_TEXT_LENGTH = 200000
+    else:
+
+        base = os.path.dirname(
+            os.path.abspath(__file__)
+        )
+
+    return os.path.join(
+        base,
+        relative
+    )
+
+
+
+BASE_DIR = resource_path("")
+
+
+MODEL_DIR = resource_path(
+    "models"
+)
+
+
+PIPER_MODEL = os.path.join(
+    MODEL_DIR,
+    "zh_CN-huayan-medium.onnx"
+)
+
+
+PIPER_CONFIG = os.path.join(
+    MODEL_DIR,
+    "zh_CN-huayan-medium.onnx.json"
+)
