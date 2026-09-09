@@ -1,110 +1,36 @@
-import os
-import subprocess
 import threading
+import wave
 
-from config import (
-    PIPER_MODEL,
-    AUDIO_FILE,
-    TEMP_DIR
-)
+from config import PIPER_MODEL, TEMP_DIR
 
 
 class PiperEngine:
-
-
     def __init__(self):
-
         self.lock = threading.Lock()
+        self._voice = None
+        self._index = 0
 
+    def _load_voice(self):
+        if self._voice is not None:
+            return self._voice
+        if not PIPER_MODEL.exists():
+            raise FileNotFoundError(f"未找到 Piper 模型：{PIPER_MODEL}")
+        try:
+            from piper import PiperVoice
+        except ImportError as exc:
+            raise RuntimeError("piper-tts 未正确安装或未被打包") from exc
+        self._voice = PiperVoice.load(str(PIPER_MODEL))
+        return self._voice
 
-        if not os.path.exists(
-            TEMP_DIR
-        ):
-
-            os.makedirs(
-                TEMP_DIR
-            )
-
-
-    def generate(
-        self,
-        text
-    ):
-
-        """
-        将文字转换为 WAV
-        """
-
+    def generate(self, text):
         with self.lock:
-
             try:
-
-                # 删除旧文件
-                if os.path.exists(
-                    AUDIO_FILE
-                ):
-
-                    os.remove(
-                        AUDIO_FILE
-                    )
-
-
-                command = [
-
-                    "piper",
-
-                    "--model",
-
-                    PIPER_MODEL,
-
-                    "--output_file",
-
-                    AUDIO_FILE
-
-                ]
-
-
-                process = subprocess.run(
-
-                    command,
-
-                    input=text,
-
-                    text=True,
-
-                    encoding="utf-8",
-
-                    capture_output=True
-
-                )
-
-
-                if process.returncode != 0:
-
-                    print(
-                        "Piper 错误："
-                    )
-
-                    print(
-                        process.stderr
-                    )
-
-                    return None
-
-
-                if os.path.exists(
-                    AUDIO_FILE
-                ):
-
-                    return AUDIO_FILE
-
-
-            except Exception as e:
-
-                print(
-                    "生成语音失败：",
-                    e
-                )
-
-
-        return None
+                voice = self._load_voice()
+                self._index += 1
+                output = TEMP_DIR / f"speech_{self._index}.wav"
+                with wave.open(str(output), "wb") as wav_file:
+                    voice.synthesize_wav(text, wav_file)
+                return str(output)
+            except Exception as exc:
+                print(f"Piper 语音生成失败：{exc}")
+                return None
