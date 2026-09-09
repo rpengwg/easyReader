@@ -1,22 +1,36 @@
-from pathlib import Path
-import zipfile
-import xml.etree.ElementTree as ET
+from odf.opendocument import load
+from odf.text import P
 
 
 def read_odt(path):
-    """Extract text from LibreOffice ODT document."""
-    path = Path(path)
-    if not path.exists():
-        return ""
 
-    with zipfile.ZipFile(path, "r") as z:
-        xml_data = z.read("content.xml")
+    doc = load(path)
 
-    root = ET.fromstring(xml_data)
 
-    texts = []
-    for elem in root.iter():
-        if elem.text:
-            texts.append(elem.text)
+    paragraphs = doc.getElementsByType(
+        P
+    )
 
-    return " ".join(texts)
+
+    result=[]
+
+
+    for p in paragraphs:
+
+        text=""
+
+        for node in p.childNodes:
+
+            if hasattr(node,"data"):
+
+                text += node.data
+
+
+        if text.strip():
+
+            result.append(
+                text.strip()
+            )
+
+
+    return "\n".join(result)
