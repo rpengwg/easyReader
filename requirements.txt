@@ -2,6 +2,7 @@ pynput
 uiautomation
 pygame
 piper-tts
+pyperclip
 pyinstaller
 pystray
 Pillow
