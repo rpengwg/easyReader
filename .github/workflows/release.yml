@@ -1,100 +1,69 @@
 name: Build EasyReader Release
 
 on:
-
   workflow_dispatch:
-
   push:
     tags:
       - "v*"
 
-
 permissions:
   contents: write
 
-
 jobs:
-
   build:
-
     runs-on: windows-latest
 
-
     steps:
-
     - name: Checkout
       uses: actions/checkout@v4
-
 
     - name: Setup Python
       uses: actions/setup-python@v5
       with:
         python-version: "3.11"
 
-
     - name: Install dependencies
       shell: cmd
       run: |
         python -m pip install --upgrade pip
         pip install -r requirements.txt
-
+        pip install pyinstaller
 
     - name: Download Piper model
       shell: cmd
       run: |
         python models\download_model.py
 
-
     - name: Build EXE
       shell: cmd
       run: |
-        pyinstaller ^
-        --clean ^
-        --noconfirm ^
-        EasyReader.spec
-
+        pyinstaller --clean --noconfirm EasyReader.spec
 
     - name: Prepare release folder
       shell: cmd
       run: |
-
-        mkdir release
-
-        xcopy dist\EasyReader release\EasyReader /E /I
-
-        xcopy models release\EasyReader\models /E /I
-
+        mkdir release\EasyReader
+        :: /E: 递归, /I: 目标视作目录, /Y: 覆盖不提示, /Q: 静默
+        xcopy dist\EasyReader release\EasyReader /E /I /Y /Q
+        xcopy models release\EasyReader\models /E /I /Y /Q
 
     - name: Create ZIP
       shell: powershell
       run: |
-
-        Compress-Archive `
-        -Path release\EasyReader `
-        -DestinationPath EasyReader-V1.0-Windows-x64.zip
-
+        Compress-Archive -Path release\EasyReader\* -DestinationPath EasyReader-Windows-x64.zip -Force
 
     - name: Upload Artifact
       uses: actions/upload-artifact@v4
       with:
-
-        name: EasyReader-V1.0-Windows-x64
-
-        path:
-          EasyReader-V1.0-Windows-x64.zip
-
-
+        name: EasyReader-Windows-x64
+        path: EasyReader-Windows-x64.zip
 
     - name: Create GitHub Release
-
-      if: startsWith(github.ref,'refs/tags/')
-
+      # 只要是推送 Tag，或者手动触发且配置了 Tag 时执行
+      if: startsWith(github.ref, 'refs/tags/')
       uses: softprops/action-gh-release@v2
-
       with:
-
-        files:
-
-          EasyReader-V1.0-Windows-x64.zip
-
+        files: EasyReader-Windows-x64.zip
         generate_release_notes: true
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
