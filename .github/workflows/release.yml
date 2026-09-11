@@ -2,6 +2,11 @@ name: Build EasyReader Release
 
 on:
   workflow_dispatch:
+    inputs:
+      version:
+        description: "Release version tag, example: v1.1.0"
+        required: true
+        default: "v1.1.0"
   push:
     tags:
       - "v*"
@@ -39,27 +44,21 @@ jobs:
       run: |
         pyinstaller --clean --noconfirm EasyReader.spec
 
-    - name: Prepare release folder
+    - name: Prepare package
       shell: cmd
       run: |
-        mkdir release\EasyReader
-        :: /E: 递归, /I: 目标视作目录, /Y: 覆盖不提示, /Q: 静默
-        xcopy dist\EasyReader release\EasyReader /E /I /Y /Q
-        xcopy models release\EasyReader\models /E /I /Y /Q
+        mkdir release\EasyReader-Windows-x64
+        xcopy dist\EasyReader release\EasyReader-Windows-x64\EasyReader /E /I /Y /Q
+        xcopy models release\EasyReader-Windows-x64\EasyReader\models /E /I /Y /Q
+        copy README.md release\EasyReader-Windows-x64\
+        copy LICENSE release\EasyReader-Windows-x64\
 
     - name: Create ZIP
       shell: powershell
       run: |
-        Compress-Archive -Path release\EasyReader\* -DestinationPath EasyReader-Windows-x64.zip -Force
-
-    - name: Upload Artifact
-      uses: actions/upload-artifact@v4
-      with:
-        name: EasyReader-Windows-x64
-        path: EasyReader-Windows-x64.zip
+        Compress-Archive -Path release\EasyReader-Windows-x64 -DestinationPath EasyReader-Windows-x64.zip -Force
 
     - name: Create GitHub Release
-      # 只要是推送 Tag，或者手动触发且配置了 Tag 时执行
       if: startsWith(github.ref, 'refs/tags/')
       uses: softprops/action-gh-release@v2
       with:
