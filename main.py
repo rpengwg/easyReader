@@ -1,6 +1,7 @@
 import os
 import time
 import threading
+from tkinter import messagebox
 
 from capture.selection import SelectionMonitor
 from config import APP_NAME, APP_VERSION, PIPER_CONFIG, PIPER_MODEL
@@ -17,6 +18,8 @@ class EasyReader:
         self.tts = PiperEngine()
         self.player = AudioPlayer()
         self.exit_event = threading.Event()
+        self.reading_chars = 0
+        self.current_text = ""
 
         self.reader_queue = ReaderQueue(self.speak)
 
@@ -35,8 +38,23 @@ class EasyReader:
     def validate_model(self):
         return PIPER_MODEL.exists() and PIPER_CONFIG.exists()
 
+    def ask_switch_document(self):
+        return messagebox.askyesno(
+            "EasyReader",
+            "检测到新的选中文档。\n是否暂停当前朗读并读取新的内容？"
+        )
+
     def on_text_selected(self, text):
-        if text:
+        if not text:
+            return
+
+        if self.player.is_playing():
+            if self.ask_switch_document():
+                self.stop_reading()
+                self.reader_queue.put(text, replace=True)
+            else:
+                return
+        else:
             self.reader_queue.put(text)
 
     def stop_reading(self):
@@ -46,12 +64,32 @@ class EasyReader:
     def toggle_pause(self):
         self.player.pause_resume()
 
+    def long_text_pause(self):
+        result = messagebox.askyesno(
+            "EasyReader",
+            "已连续朗读5000字符。\n是否停止朗读并休息2分钟？"
+        )
+        if result:
+            self.player.stop()
+            time.sleep(120)
+            return True
+        return False
+
     def speak(self, text):
         try:
+            self.current_text = text
             chunks = split_text(text)
+
             for index, chunk in enumerate(chunks, 1):
                 if self.exit_event.is_set():
                     break
+
+                self.reading_chars += len(chunk)
+
+                if self.reading_chars >= 5000:
+                    if self.long_text_pause():
+                        break
+                    self.reading_chars = 0
 
                 print(f"朗读第 {index}/{len(chunks)} 段")
 
@@ -82,18 +120,15 @@ class EasyReader:
             return 1
 
         print(f"{APP_NAME} V{APP_VERSION} 已启动")
-
         self.reader_queue.start()
         self.selection_monitor.start()
         self.hotkey.start()
         self.tray.run()
-
         return 0
 
     def shutdown(self):
         if self.exit_event.is_set():
             return
-
         self.exit_event.set()
         self.reader_queue.stop()
         self.selection_monitor.stop()
