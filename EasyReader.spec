@@ -2,46 +2,29 @@
 
 
 a = Analysis(
-
-    [
-        "main.py"
-    ],
-
-
+    ['main.py'],
     datas=[
-
-        (
-            "models",
-            "models"
-        )
-
+        ('models', 'models'),
+        ('documents', 'documents')
     ],
-
-
     hiddenimports=[
-
-        "piper",
-        "odf"
-
+        'piper',
+        'odf',
+        'odf.opendocument',
+        'odf.text',
+        'pystray',
+        'pygame',
+        'uiautomation',
+        'pynput'
     ]
-
 )
-
-
 
 pyz = PYZ(a.pure)
 
-
 exe = EXE(
-
     pyz,
-
     a.scripts,
-
-    name="EasyReader",
-
+    name='EasyReader',
     console=False,
-
-    icon="icon.ico"
-
+    icon='icon.ico'
 )
