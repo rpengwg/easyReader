@@ -38,11 +38,13 @@ jobs:
       shell: cmd
       run: |
         python models\download_model.py
+        dir models
 
     - name: Build EXE
       shell: cmd
       run: |
         pyinstaller --clean --noconfirm EasyReader.spec
+        if not exist dist\EasyReader\EasyReader.exe exit /b 1
 
     - name: Prepare package
       shell: cmd
@@ -50,13 +52,21 @@ jobs:
         mkdir release\EasyReader-Windows-x64
         xcopy dist\EasyReader release\EasyReader-Windows-x64\EasyReader /E /I /Y /Q
         xcopy models release\EasyReader-Windows-x64\EasyReader\models /E /I /Y /Q
+        if exist documents xcopy documents release\EasyReader-Windows-x64\EasyReader\documents /E /I /Y /Q
         copy README.md release\EasyReader-Windows-x64\
         copy LICENSE release\EasyReader-Windows-x64\
+
+    - name: Verify package
+      shell: cmd
+      run: |
+        dir release\EasyReader-Windows-x64\EasyReader
+        if not exist release\EasyReader-Windows-x64\EasyReader\EasyReader.exe exit /b 1
+        if not exist release\EasyReader-Windows-x64\EasyReader\models\zh_CN-huayan-medium.onnx exit /b 1
 
     - name: Create ZIP
       shell: powershell
       run: |
-        Compress-Archive -Path release\EasyReader-Windows-x64 -DestinationPath EasyReader-Windows-x64.zip -Force
+        Compress-Archive -Path release\EasyReader-Windows-x64\* -DestinationPath EasyReader-Windows-x64.zip -Force
 
     - name: Create GitHub Release
       if: startsWith(github.ref, 'refs/tags/')
