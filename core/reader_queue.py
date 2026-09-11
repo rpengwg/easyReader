@@ -8,6 +8,8 @@ class ReaderQueue:
         self.worker = worker
         self.running = False
         self.thread = None
+        self.paused = False
+        self.lock = threading.Lock()
 
     def start(self):
         if self.running:
@@ -16,8 +18,12 @@ class ReaderQueue:
         self.thread = threading.Thread(target=self._run, daemon=True)
         self.thread.start()
 
-    def put(self, text):
-        if text:
+    def put(self, text, replace=False):
+        if not text:
+            return
+        with self.lock:
+            if replace:
+                self.clear()
             self.queue.put(text)
 
     def add(self, text):
