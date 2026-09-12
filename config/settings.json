@@ -5,7 +5,10 @@
   },
   "tts": {
     "engine": "piper",
-    "model_dir": "models/piper"
+    "model_dir": "models/piper",
+    "voice": "",
+    "speed": 1.0,
+    "volume": 1.0
   },
   "logging": {
     "level": "INFO",
