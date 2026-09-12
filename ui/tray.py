@@ -21,11 +21,12 @@ class TrayApp:
 
     def _build_icon(self):
         menu = Menu(
+            MenuItem("设置", lambda icon, item: self.app.open_settings()),
             MenuItem("暂停 / 继续", lambda icon, item: self.app.toggle_pause()),
             MenuItem("停止朗读", lambda icon, item: self.app.stop_reading()),
             MenuItem("退出 EasyReader", lambda icon, item: self.app.shutdown()),
         )
-        self.icon = Icon("EasyReader", self._image(), "EasyReader V1.0", menu)
+        self.icon = Icon("EasyReader", self._image(), "EasyReader 1.1.2", menu)
 
     def run(self):
         self._build_icon()
