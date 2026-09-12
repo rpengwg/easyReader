@@ -1,8 +1,7 @@
 from pathlib import Path
 import json
-import sys
 
-BASE = Path(__file__).resolve().parent
+BASE = Path(__file__).resolve().parent / "piper"
 
 SUPPORTED_MODELS = {
     "zh_CN": "zh_CN-huayan-medium.onnx",
@@ -11,6 +10,8 @@ SUPPORTED_MODELS = {
 
 
 def list_models():
+    if not BASE.exists():
+        return []
     return [p.name for p in BASE.glob("*.onnx")]
 
 
@@ -25,15 +26,14 @@ def check_models():
     info = model_info()
     print(json.dumps(info, ensure_ascii=False, indent=2))
 
-    # Offline build mode: models are optional.
-    # Models are external files and should not break EXE packaging.
     if not info["available"]:
         print("No local Piper model found.")
-        print("This is OK. Models can be added later under models/piper/")
-        return 0
+        print("This is normal for lightweight builds.")
+        print("Models can be added later under models/piper/")
 
-    return 0
+    # Never fail CI/CD build because models are external resources.
+    return
 
 
 if __name__ == "__main__":
-    sys.exit(check_models())
+    check_models()
