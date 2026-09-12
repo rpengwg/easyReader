@@ -4,9 +4,9 @@ on:
   workflow_dispatch:
     inputs:
       version:
-        description: "Release version tag, example: v1.1.1"
+        description: "Release version tag, example: v1.1.2"
         required: true
-        default: "v1.1.1"
+        default: "v1.1.2"
   push:
     tags:
       - "v*"
@@ -34,11 +34,16 @@ jobs:
         pip install -r requirements.txt
         pip install pyinstaller
 
-    - name: Download Piper model
+    - name: Prepare external model directory
+      shell: cmd
+      run: |
+        mkdir models\piper 2>nul
+        if not exist models\piper\README.txt echo Piper models are external files. Copy ONNX and JSON model files here. > models\piper\README.txt
+
+    - name: Check model directory
       shell: cmd
       run: |
         python models\download_model.py
-        if not exist models\zh_CN-huayan-medium.onnx exit /b 1
 
     - name: Build EXE
       shell: cmd
@@ -51,7 +56,9 @@ jobs:
       run: |
         mkdir release\EasyReader-Windows-x64\EasyReader
         copy dist\EasyReader.exe release\EasyReader-Windows-x64\EasyReader\
-        xcopy models release\EasyReader-Windows-x64\EasyReader\models /E /I /Y /Q
+        mkdir release\EasyReader-Windows-x64\EasyReader\models\piper
+        copy models\piper\README.txt release\EasyReader-Windows-x64\EasyReader\models\piper\
+        if exist config xcopy config release\EasyReader-Windows-x64\EasyReader\config /E /I /Y /Q
         if exist documents xcopy documents release\EasyReader-Windows-x64\EasyReader\documents /E /I /Y /Q
         copy README.md release\EasyReader-Windows-x64\
         if exist CHANGELOG.md copy CHANGELOG.md release\EasyReader-Windows-x64\
@@ -63,7 +70,7 @@ jobs:
       shell: cmd
       run: |
         if not exist release\EasyReader-Windows-x64\EasyReader\EasyReader.exe exit /b 1
-        if not exist release\EasyReader-Windows-x64\EasyReader\models\zh_CN-huayan-medium.onnx exit /b 1
+        if not exist release\EasyReader-Windows-x64\EasyReader\models\piper\README.txt exit /b 1
 
     - name: Create ZIP
       shell: powershell
