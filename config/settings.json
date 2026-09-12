@@ -1,0 +1,14 @@
+{
+  "app": {
+    "name": "EasyReader",
+    "version": "1.1.2"
+  },
+  "tts": {
+    "engine": "piper",
+    "model_dir": "models/piper"
+  },
+  "logging": {
+    "level": "INFO",
+    "file": "logs/easyreader.log"
+  }
+}
