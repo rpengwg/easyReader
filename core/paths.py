@@ -1,6 +1,11 @@
+import sys
 from pathlib import Path
 
-ROOT_DIR = Path(__file__).resolve().parent.parent
+if getattr(sys, "frozen", False):
+    ROOT_DIR = Path(sys.executable).resolve().parent
+else:
+    ROOT_DIR = Path(__file__).resolve().parent.parent
+
 BASE_DIR = ROOT_DIR
 MODEL_DIR = ROOT_DIR / "models" / "piper"
 TEMP_DIR = ROOT_DIR / "temp"
