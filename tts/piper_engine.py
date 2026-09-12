@@ -1,36 +1,41 @@
 import threading
 import wave
+from pathlib import Path
 
-from config import PIPER_MODEL, TEMP_DIR
+from core.logger import logger
+from core.paths import TEMP_DIR
+from tts.model_loader import ModelLoader
 
 
 class PiperEngine:
     def __init__(self):
         self.lock = threading.Lock()
-        self._voice = None
-        self._index = 0
+        self.voice = None
+        self.index = 0
+        self.loader = ModelLoader()
 
     def _load_voice(self):
-        if self._voice is not None:
-            return self._voice
-        if not PIPER_MODEL.exists():
-            raise FileNotFoundError(f"未找到 Piper 模型：{PIPER_MODEL}")
+        if self.voice:
+            return self.voice
         try:
             from piper import PiperVoice
-        except ImportError as exc:
-            raise RuntimeError("piper-tts 未正确安装或未被打包") from exc
-        self._voice = PiperVoice.load(str(PIPER_MODEL))
-        return self._voice
+            model = self.loader.get_model()
+            self.voice = PiperVoice.load(str(model))
+            logger.info("Piper model loaded: %s", model)
+            return self.voice
+        except Exception as exc:
+            logger.exception("Piper model load failed: %s", exc)
+            raise
 
     def generate(self, text):
         with self.lock:
             try:
                 voice = self._load_voice()
-                self._index += 1
-                output = TEMP_DIR / f"speech_{self._index}.wav"
-                with wave.open(str(output), "wb") as wav_file:
-                    voice.synthesize_wav(text, wav_file)
+                self.index += 1
+                output = TEMP_DIR / f"speech_{self.index}.wav"
+                with wave.open(str(output), "wb") as wav:
+                    voice.synthesize_wav(text, wav)
                 return str(output)
             except Exception as exc:
-                print(f"Piper 语音生成失败：{exc}")
+                logger.error("speech generation failed: %s", exc)
                 return None
