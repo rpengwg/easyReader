@@ -37,7 +37,7 @@ jobs:
     - name: Prepare external model directory
       shell: cmd
       run: |
-        mkdir models\piper 2>nul
+        if not exist models\piper mkdir models\piper
         if not exist models\piper\README.txt echo Piper models are external files. Copy ONNX and JSON model files here. > models\piper\README.txt
 
     - name: Check model directory
@@ -56,7 +56,7 @@ jobs:
       run: |
         mkdir release\EasyReader-Windows-x64\EasyReader
         copy dist\EasyReader.exe release\EasyReader-Windows-x64\EasyReader\
-        mkdir release\EasyReader-Windows-x64\EasyReader\models\piper
+        if not exist release\EasyReader-Windows-x64\EasyReader\models\piper mkdir release\EasyReader-Windows-x64\EasyReader\models\piper
         copy models\piper\README.txt release\EasyReader-Windows-x64\EasyReader\models\piper\
         if exist config xcopy config release\EasyReader-Windows-x64\EasyReader\config /E /I /Y /Q
         if exist documents xcopy documents release\EasyReader-Windows-x64\EasyReader\documents /E /I /Y /Q
