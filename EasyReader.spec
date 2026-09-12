@@ -2,8 +2,6 @@
 
 from PyInstaller.utils.hooks import collect_all
 
-# Collect only runtime packages. Avoid piper.train optional modules
-# which require torch and are not needed by EasyReader runtime.
 piper_datas, piper_binaries, piper_hidden = collect_all('piper')
 odf_datas, odf_binaries, odf_hidden = collect_all('odf')
 pygame_datas, pygame_binaries, pygame_hidden = collect_all('pygame')
@@ -13,7 +11,6 @@ a = Analysis(
     ['main.py'],
     pathex=['.'],
     datas=[
-        ('models', 'models'),
         ('documents', 'documents'),
         *piper_datas,
         *odf_datas,
@@ -32,6 +29,7 @@ a = Analysis(
         'pygame',
         'uiautomation',
         'pynput',
+        'core.model_manager',
         *piper_hidden,
         *odf_hidden,
         *pygame_hidden,
