@@ -3,12 +3,13 @@ import time
 import threading
 from tkinter import messagebox
 
-from capture.selection import SelectionMonitor
-from config import APP_NAME, APP_VERSION, PIPER_CONFIG, PIPER_MODEL
-from control.hotkey import HotkeyController
+from core.logger import logger
+from core.paths import MODEL_DIR
 from tts.piper_engine import PiperEngine
 from tts.player import AudioPlayer
 from tts.splitter import split_text
+from capture.selection import SelectionMonitor
+from control.hotkey import HotkeyController
 from ui.tray import TrayApp
 from core.reader_queue import ReaderQueue
 
@@ -19,107 +20,44 @@ class EasyReader:
         self.player = AudioPlayer()
         self.exit_event = threading.Event()
         self.reading_chars = 0
-        self.current_text = ""
-
         self.reader_queue = ReaderQueue(self.speak)
-
-        self.selection_monitor = SelectionMonitor(
-            self.on_text_selected
-        )
-
-        self.hotkey = HotkeyController(
-            self.player,
-            stop_callback=self.stop_reading,
-            exit_callback=self.shutdown,
-        )
-
+        self.selection_monitor = SelectionMonitor(self.on_text_selected)
+        self.hotkey = HotkeyController(self.player, self.stop_reading, self.shutdown)
         self.tray = TrayApp(self)
 
     def validate_model(self):
-        return PIPER_MODEL.exists() and PIPER_CONFIG.exists()
-
-    def ask_switch_document(self):
-        return messagebox.askyesno(
-            "EasyReader",
-            "检测到新的选中文档。\n是否暂停当前朗读并读取新的内容？"
-        )
+        return any(MODEL_DIR.glob("*.onnx"))
 
     def on_text_selected(self, text):
-        if not text:
-            return
-
-        if self.player.is_playing():
-            if self.ask_switch_document():
-                self.stop_reading()
-                self.reader_queue.put(text, replace=True)
-            else:
-                return
-        else:
-            self.reader_queue.put(text)
+        if text:
+            self.reader_queue.put(text, replace=self.player.is_playing())
 
     def stop_reading(self):
         self.reader_queue.clear()
         self.player.stop()
 
-    def toggle_pause(self):
-        self.player.pause_resume()
-
-    def long_text_pause(self):
-        result = messagebox.askyesno(
-            "EasyReader",
-            "已连续朗读5000字符。\n是否停止朗读并休息2分钟？"
-        )
-        if result:
-            self.player.stop()
-            time.sleep(120)
-            return True
-        return False
-
     def speak(self, text):
         try:
-            self.current_text = text
-            chunks = split_text(text)
-
-            for index, chunk in enumerate(chunks, 1):
-                if self.exit_event.is_set():
-                    break
-
-                self.reading_chars += len(chunk)
-
-                if self.reading_chars >= 5000:
-                    if self.long_text_pause():
-                        break
-                    self.reading_chars = 0
-
-                print(f"朗读第 {index}/{len(chunks)} 段")
-
-                audio_file = self.tts.generate(chunk)
-                if not audio_file:
-                    continue
-
-                self.player.play(audio_file)
-
-                while self.player.is_playing() or self.player.paused:
-                    if self.exit_event.is_set():
-                        self.player.stop()
-                        break
-                    time.sleep(0.08)
-
-                try:
-                    os.remove(audio_file)
-                except OSError:
-                    pass
-
+            for chunk in split_text(text):
+                audio = self.tts.generate(chunk)
+                if audio:
+                    self.player.play(audio)
+                    while self.player.is_playing() or self.player.paused:
+                        if self.exit_event.is_set():
+                            return
+                        time.sleep(0.08)
+                    try:
+                        os.remove(audio)
+                    except OSError:
+                        pass
         except Exception as exc:
-            print(f"朗读任务异常: {exc}")
+            logger.exception("reader error: %s", exc)
 
     def start(self):
         if not self.validate_model():
-            print("缺少 Piper 中文模型文件")
-            print(PIPER_MODEL)
+            messagebox.showerror("EasyReader", f"未找到Piper模型:\n{MODEL_DIR}")
             return 1
-
-        print(f"{APP_NAME} V{APP_VERSION} 已启动")
+        logger.info("EasyReader 1.1.2 started")
         self.reader_queue.start()
         self.selection_monitor.start()
         self.hotkey.start()
@@ -127,8 +65,6 @@ class EasyReader:
         return 0
 
     def shutdown(self):
-        if self.exit_event.is_set():
-            return
         self.exit_event.set()
         self.reader_queue.stop()
         self.selection_monitor.stop()
@@ -138,8 +74,7 @@ class EasyReader:
 
 
 def main():
-    app = EasyReader()
-    return app.start()
+    return EasyReader().start()
 
 
 if __name__ == "__main__":
