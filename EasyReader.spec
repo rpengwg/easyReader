@@ -28,8 +28,10 @@ a = Analysis(
         'pynput',
         'core.paths',
         'core.logger',
+        'core.settings',
         'tts.model_loader',
         'tts.piper_engine',
+        'ui.settings_window',
         *piper_hidden,
         *pygame_hidden,
     ],
@@ -44,5 +46,5 @@ exe = EXE(
     a.datas,
     name='EasyReader',
     console=False,
-    icon='icon.ico'
+    icon='icon.ico',
 )
