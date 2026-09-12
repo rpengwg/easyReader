@@ -1,5 +1,6 @@
 from pathlib import Path
 import json
+import sys
 
 BASE = Path(__file__).resolve().parent
 
@@ -20,5 +21,19 @@ def model_info():
     }
 
 
+def check_models():
+    info = model_info()
+    print(json.dumps(info, ensure_ascii=False, indent=2))
+
+    # Offline build mode: models are optional.
+    # Models are external files and should not break EXE packaging.
+    if not info["available"]:
+        print("No local Piper model found.")
+        print("This is OK. Models can be added later under models/piper/")
+        return 0
+
+    return 0
+
+
 if __name__ == "__main__":
-    print(json.dumps(model_info(), ensure_ascii=False, indent=2))
+    sys.exit(check_models())
