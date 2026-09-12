@@ -3,7 +3,6 @@
 from PyInstaller.utils.hooks import collect_all
 
 piper_datas, piper_binaries, piper_hidden = collect_all('piper')
-odf_datas, odf_binaries, odf_hidden = collect_all('odf')
 pygame_datas, pygame_binaries, pygame_hidden = collect_all('pygame')
 
 
@@ -11,9 +10,10 @@ a = Analysis(
     ['main.py'],
     pathex=['.'],
     datas=[
+        ('config/settings.json', 'config'),
         ('documents', 'documents'),
+        ('icon.ico', '.'),
         *piper_datas,
-        *odf_datas,
         *pygame_datas,
     ],
     binaries=[
@@ -22,16 +22,15 @@ a = Analysis(
     ],
     hiddenimports=[
         'piper',
-        'odf',
-        'odf.opendocument',
-        'odf.text',
         'pystray',
         'pygame',
         'uiautomation',
         'pynput',
-        'core.model_manager',
+        'core.paths',
+        'core.logger',
+        'tts.model_loader',
+        'tts.piper_engine',
         *piper_hidden,
-        *odf_hidden,
         *pygame_hidden,
     ],
 )
