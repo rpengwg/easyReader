@@ -1,35 +1,52 @@
 import os
-import sys
 from pathlib import Path
 
+from core.paths import (
+    BASE_DIR,
+    MODEL_DIR,
+    TEMP_DIR,
+    LOG_DIR,
+)
 
-def resource_path(relative):
-    if hasattr(sys, "_MEIPASS"):
-        base = Path(sys._MEIPASS)
-    else:
-        base = Path(__file__).resolve().parent
-    return base / relative
+
+APP_NAME = "EasyReader"
+APP_VERSION = "1.1.2"
 
 
-BASE_DIR = resource_path("")
+# v1.1.2 compatibility layer
+# Keep old modules working while moving runtime settings into core/paths.py
 
-# v1.1.2: models are external runtime assets
-# EXE can be replaced without packaging Piper models again.
-MODEL_DIR = Path(os.getenv("EASYREADER_MODEL_DIR", BASE_DIR / "models"))
-
-PIPER_MODEL = MODEL_DIR / os.getenv(
+MODEL_NAME = os.getenv(
     "EASYREADER_MODEL",
     "zh_CN-huayan-medium.onnx"
 )
 
+PIPER_MODEL = MODEL_DIR / MODEL_NAME
 PIPER_CONFIG = Path(str(PIPER_MODEL) + ".json")
 
-TEMP_DIR = Path(os.getenv("EASYREADER_TEMP_DIR", BASE_DIR / "temp"))
-TEMP_DIR.mkdir(parents=True, exist_ok=True)
 
 MIN_TEXT_LENGTH = 1
 MAX_TEXT_LENGTH = 5000
 SELECTION_DELAY = 0.3
 
-APP_NAME = "EasyReader"
-APP_VERSION = "1.1.2"
+
+# Runtime options
+PIPER_SPEED = float(os.getenv("EASYREADER_SPEED", "1.0"))
+PIPER_VOLUME = float(os.getenv("EASYREADER_VOLUME", "1.0"))
+
+
+SETTINGS_FILE = BASE_DIR / "config" / "settings.json"
+
+__all__ = [
+    "APP_NAME",
+    "APP_VERSION",
+    "PIPER_MODEL",
+    "PIPER_CONFIG",
+    "MODEL_DIR",
+    "TEMP_DIR",
+    "LOG_DIR",
+    "SETTINGS_FILE",
+    "MIN_TEXT_LENGTH",
+    "MAX_TEXT_LENGTH",
+    "SELECTION_DELAY",
+]
